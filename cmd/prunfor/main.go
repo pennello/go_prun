@@ -14,6 +14,8 @@ import (
 	"time"
 
 	"path/filepath"
+
+	"chrispennello.com/go/prun/cmd"
 )
 
 var myargs struct {
@@ -57,5 +59,16 @@ func init() {
 }
 
 func main() {
-	log.Printf("%#v\n", myargs)
+	proc, err := cmd.NewProc(myargs.name, myargs.args)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	success, err2 := proc.Wait()
+	if err2 != nil {
+		log.Fatal(err2)
+	}
+	if !success {
+		os.Exit(1)
+	}
 }
