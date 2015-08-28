@@ -11,8 +11,9 @@ package main
 import (
 	"os"
 	"log"
-	"path"
 	"time"
+
+	"path/filepath"
 )
 
 var myargs struct {
@@ -36,7 +37,7 @@ func usage() {
 
 func init() {
 	log.SetFlags(0)
-	myargs.myname = path.Base(os.Args[0])
+	myargs.myname = filepath.Base(os.Args[0])
 
 	if len(os.Args) < 3 {
 		usage()
