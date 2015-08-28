@@ -9,8 +9,8 @@
 package main
 
 import (
-	"os"
 	"log"
+	"os"
 	"time"
 
 	"path/filepath"
