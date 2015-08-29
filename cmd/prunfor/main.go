@@ -43,17 +43,8 @@ var myargs struct {
 	args []string
 }
 
-func badargs(format string, a ...interface{}) {
-	log.Printf(format, a...)
-	os.Exit(2)
-}
-
 func usage() {
-	badargs("usage: %s timelimit command [argument ...]\n", myargs.myname)
-}
-
-func argerr(err error) {
-	badargs("%v\n", err)
+	cmd.BadArgs("usage: %s timelimit command [argument ...]\n", myargs.myname)
 }
 
 func init() {
@@ -67,10 +58,10 @@ func init() {
 	var err error
 	myargs.timelimit, err = time.ParseDuration(os.Args[1])
 	if err != nil {
-		argerr(err)
+		cmd.ArgError(err)
 	}
 	if myargs.timelimit < 0 {
-		badargs("timelimit must be non-negative\n")
+		cmd.BadArgs("timelimit must be non-negative\n")
 	}
 
 	myargs.command = os.Args[2]
