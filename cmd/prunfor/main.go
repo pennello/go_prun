@@ -2,10 +2,21 @@
 
 // prunfor runs a command for an optionally limited amount of time.
 //
-//	usage: prunfor limit command [argument ...]
+//	usage: prunfor timelimit command [argument ...]
 //
-// limit is a non-negative time.Duration.  If limit is zero, no time
-// limit will be applied to command's execution.
+// timelimit is a non-negative time.Duration.  If timelimit is zero, no
+// time timelimit will be applied to command's execution.
+//
+// Diagnostics
+//
+// prunfor will return with the following exit codes.
+//
+//	0 The command executed successfully in the time allotted.
+//	1 The command coudn't be found, exited unsuccessfully, or some
+//	  other error occurred when trying to run the command.
+//	2 Invalid arguments.
+//	3 The command timed out.
+//
 package main
 
 import (
@@ -22,19 +33,27 @@ var myargs struct {
 	// Name of this program as it's invoked.
 	myname string
 
-	// Time limit that the specified program can run for.
-	limit time.Duration
+	// Time timelimit that the specified program can run for.
+	timelimit time.Duration
 
-	// Name of the program to run.
-	name string
+	// Name of the command to run.
+	command string
 
 	// Optional arguments to pass to the program.
 	args []string
 }
 
-func usage() {
-	log.Printf("usage: %s limit command [argument ...]\n", myargs.myname)
+func badargs(format string, a ...interface{}) {
+	log.Printf(format, a...)
 	os.Exit(2)
+}
+
+func usage() {
+	badargs("usage: %s timelimit command [argument ...]\n", myargs.myname)
+}
+
+func argerr(err error) {
+	badargs("%v\n", err)
 }
 
 func init() {
@@ -46,29 +65,58 @@ func init() {
 	}
 
 	var err error
-	myargs.limit, err = time.ParseDuration(os.Args[1])
+	myargs.timelimit, err = time.ParseDuration(os.Args[1])
 	if err != nil {
-		log.Fatal(err)
+		argerr(err)
 	}
-	if myargs.limit < 0 {
-		log.Fatal("limit must be non-negative")
+	if myargs.timelimit < 0 {
+		badargs("timelimit must be non-negative\n")
 	}
 
-	myargs.name = os.Args[2]
+	myargs.command = os.Args[2]
 	myargs.args = os.Args[3:]
 }
 
 func main() {
-	proc, err := cmd.NewProc(myargs.name, myargs.args)
+	proc, err := cmd.NewProc(myargs.command, myargs.args)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	success, err2 := proc.Wait()
-	if err2 != nil {
-		log.Fatal(err2)
+	done := make(chan struct{})
+	go func() {
+		success, err := proc.Wait()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !success {
+			os.Exit(1)
+		}
+		close(done)
+	}()
+
+	if myargs.timelimit > 0 {
+		timeout := make(chan struct{})
+		go func() {
+			time.Sleep(myargs.timelimit)
+			close(timeout)
+		}()
+		select {
+		case <-done:
+			// Process exited before timeout.  Thus, there's
+			// no need to wait on that anymore in
+			// combination with the timeout.
+			break
+		case <-timeout:
+			log.Printf("timed out: %s\n", proc)
+			if err := proc.Kill(); err != nil {
+				log.Print(err)
+			}
+			// Don't care if this errors.
+			proc.Wait()
+			os.Exit(3)
+		}
 	}
-	if !success {
-		os.Exit(1)
-	}
+
+	<-done
 }

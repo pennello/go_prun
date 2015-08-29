@@ -1,7 +1,13 @@
+// chris 082815
+
+// Package cmd provides common code for command-line prun
+// implementations.
 package cmd
 
 import (
+	"fmt"
 	"os"
+	"strings"
 
 	"os/exec"
 	"path/filepath"
@@ -12,6 +18,9 @@ import (
 // low-level utility of an os.Process.
 type Proc struct {
 	*os.Process
+
+	command string
+	args    []string
 }
 
 // NewProc returns the Proc struct to execute the named command with its
@@ -24,14 +33,15 @@ type Proc struct {
 // It sets the current process's standard in, output, and error to be
 // those used by the new process.
 func NewProc(command string, args []string) (*Proc, error) {
-	if filepath.Base(command) == command {
-		if lp, err := exec.LookPath(command); err != nil {
+	origCommand := command
+	if filepath.Base(origCommand) == origCommand {
+		if lp, err := exec.LookPath(origCommand); err != nil {
 			return nil, err
 		} else {
 			command = lp
 		}
 	}
-	argv := append([]string{command}, args...)
+	argv := append([]string{origCommand}, args...)
 	attr := new(os.ProcAttr)
 	attr.Files = []*os.File{
 		os.Stdin,
@@ -42,7 +52,21 @@ func NewProc(command string, args []string) (*Proc, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Proc{Process: process}, nil
+	p := &Proc{
+		Process: process,
+		command: origCommand,
+		args: args,
+	}
+	return p, nil
+}
+
+// String returns a string representation of the command and its
+// arguments.
+func (p *Proc) String() string {
+	if len(p.args) == 0 {
+		return p.command
+	}
+	return fmt.Sprintf("%s %s", p.command, strings.Join(p.args, " "))
 }
 
 // Wait calls Wait on the underlying os.Process and returns whether or
@@ -54,4 +78,9 @@ func (p *Proc) Wait() (exitedSuccessfully bool, err error) {
 		return false, err
 	}
 	return ps.Success(), nil
+}
+
+// Kill simply calls Kill on the underlying os.Process.
+func (p *Proc) Kill() error {
+	return p.Process.Kill()
 }
