@@ -1,12 +1,9 @@
 // chris 082815
 
-// Package cmd provides common code for command-line prun
-// implementations.
 package cmd
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -84,13 +81,4 @@ func (p *Proc) Wait() (exitedSuccessfully bool, err error) {
 // Kill simply calls Kill on the underlying os.Process.
 func (p *Proc) Kill() error {
 	return p.Process.Kill()
-}
-
-func BadArgs(format string, a ...interface{}) {
-	log.Printf(format, a...)
-	os.Exit(2)
-}
-
-func ArgError(err error) {
-	BadArgs("%v\n", err)
 }
