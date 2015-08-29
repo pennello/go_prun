@@ -5,7 +5,7 @@
 //	usage: prunfor timelimit command [argument ...]
 //
 // timelimit is a non-negative time.Duration.  If timelimit is zero, no
-// time timelimit will be applied to command's execution.
+// timelimit will be applied to command's execution.
 //
 // Diagnostics
 //
