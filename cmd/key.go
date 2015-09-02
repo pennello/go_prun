@@ -1,4 +1,4 @@
-// chris 082915
+// chris 082915 Keys for unique command line-invocation identification.
 
 package cmd
 
