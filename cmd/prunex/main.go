@@ -67,18 +67,9 @@ func init() {
 func main() {
 	lc, err := lockfile.LockRm(myargs.globalname, myargs.localname)
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		os.Exit(4)
 	}
 	defer lc.Unlock()
-	proc, err2 := cmd.NewProc(myargs.command, myargs.args)
-	if err2 != nil {
-		log.Fatal(err2)
-	}
-	success, err3 := proc.Wait()
-	if err3 != nil {
-		log.Fatal(err3)
-	}
-	if !success {
-		os.Exit(1)
-	}
+	cmd.NewProcExit(myargs.command, myargs.args).WaitExit()
 }

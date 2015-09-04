@@ -72,24 +72,11 @@ func init() {
 }
 
 func main() {
-	proc, err := cmd.NewProc(myargs.command, myargs.args)
-	if err != nil {
-		if err == cmd.ErrNoEnt {
-			log.Printf("%s: not found\n", myargs.command)
-			os.Exit(127)
-		}
-		log.Fatal(err) // Implicitly exits with status 1.
-	}
+	proc := cmd.NewProcExit(myargs.command, myargs.args)
 
 	done := make(chan struct{})
 	go func() {
-		exitStatus, err := proc.Wait()
-		if err != nil {
-			log.Fatal(err)
-		}
-		if exitStatus != 0 {
-			os.Exit(exitStatus)
-		}
+		proc.WaitExit()
 		close(done)
 	}()
 

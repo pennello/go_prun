@@ -5,6 +5,7 @@ package cmd
 import (
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 	"syscall"
@@ -81,6 +82,24 @@ func NewProc(command string, args []string) (*Proc, error) {
 	return p, nil
 }
 
+// NewProcExit wraps NewProc, but instead of returning an error when
+// something goes wrong, it exits the process with a useful error
+// message and exit status.
+//
+// If the command could not be found, the exit status is 127.  For all
+// other errors, the exit status is 1.
+func NewProcExit(command string, args []string) *Proc {
+	proc, err := NewProc(command, args)
+	if err != nil {
+		if err == ErrNoEnt {
+			log.Printf("%s: not found\n", command)
+			os.Exit(127)
+		}
+		log.Fatal(err) // Implicitly exits with status 1.
+	}
+	return proc
+}
+
 // String returns a string representation of the command and its
 // arguments.
 func (p *Proc) String() string {
@@ -113,6 +132,21 @@ func (p *Proc) Wait() (exitStatus int, err error) {
 		return 0, nil
 	}
 	return -1, nil
+}
+
+// WaitExit wraps Wait, but instead of returning the exit status or
+// error, it exits the parent process with a useful message and exit
+// status when something goes wrong.  if the underlying os.Process has
+// exited successfully, it does nothing (i.e., it does not exit the
+// parent process).
+func (p *Proc) WaitExit() {
+	exitStatus, err := p.Wait()
+	if err != nil {
+		log.Fatal(err)
+	}
+	if exitStatus != 0 {
+		os.Exit(exitStatus)
+	}
 }
 
 // Kill simply calls Kill on the underlying os.Process.
