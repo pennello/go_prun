@@ -11,12 +11,15 @@
 //
 // prunfor will return with the following exit codes.
 //
-//	0 The command executed successfully in the time allotted.
-//	1 The command coudn't be found, exited unsuccessfully, or some
-//	  other error occurred when trying to run the command.
-//	2 Invalid arguments.
-//	3 The command timed out.
+//	  1 An unidentified error occurred when trying to run or wait on
+//	    the command.
+//	  2 Invalid arguments.
+//	  3 Timed out.
+//	127 The command could not be found.
+//	255 The command exited unsuccessfully, but the underlying
+//	    operating system does not support examining the exit status.
 //
+// Otherwise, prunfor will return with the exit code of the command.
 package main
 
 import (
@@ -71,17 +74,21 @@ func init() {
 func main() {
 	proc, err := cmd.NewProc(myargs.command, myargs.args)
 	if err != nil {
-		log.Fatal(err)
+		if err == cmd.ErrNoEnt {
+			log.Printf("%s: not found\n", myargs.command)
+			os.Exit(127)
+		}
+		log.Fatal(err) // Implicitly exits with status 1.
 	}
 
 	done := make(chan struct{})
 	go func() {
-		success, err := proc.Wait()
+		exitStatus, err := proc.Wait()
 		if err != nil {
 			log.Fatal(err)
 		}
-		if !success {
-			os.Exit(1)
+		if exitStatus != 0 {
+			os.Exit(exitStatus)
 		}
 		close(done)
 	}()
