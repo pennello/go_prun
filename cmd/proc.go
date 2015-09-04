@@ -31,9 +31,9 @@ type Proc struct {
 // NewProc returns the Proc struct to execute the named command with its
 // optional arguments.
 //
-// If command contains no path separators, Command uses LookPath to
-// resolve the path to a complete command if possible. Otherwise it uses
-// command directly.
+// If command contains no path separators, Command uses os/exec.LookPath
+// to resolve the path to a complete command if possible. Otherwise it
+// uses command directly.
 //
 // It sets the current process's standard in, output, and error to be
 // those used by the new process.
@@ -83,7 +83,7 @@ func NewProc(command string, args []string) (*Proc, error) {
 }
 
 // NewProcExit wraps NewProc, but instead of returning an error when
-// something goes wrong, it exits the process with a useful error
+// something goes wrong, it exits the parent process with a useful error
 // message and exit status.
 //
 // If the command could not be found, the exit status is 127.  For all
@@ -136,8 +136,8 @@ func (p *Proc) Wait() (exitStatus int, err error) {
 
 // WaitExit wraps Wait, but instead of returning the exit status or
 // error, it exits the parent process with a useful message and exit
-// status when something goes wrong.  if the underlying os.Process has
-// exited successfully, it does nothing (i.e., it does not exit the
+// status when something goes wrong.  If the underlying os.Process
+// exited successfully, it does nothing--that is, it does not exit the
 // parent process).
 func (p *Proc) WaitExit() {
 	exitStatus, err := p.Wait()
