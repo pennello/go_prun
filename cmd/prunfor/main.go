@@ -93,17 +93,16 @@ func main() {
 		}()
 		select {
 		case <-done:
-			// Process exited before timeout.  Thus, there's
-			// no need to wait on that anymore in
-			// combination with the timeout.
+			// Process exited successfully before timeout.
+			// Thus, there's no need to wait on that anymore
+			// in combination with the timeout.
 			break
 		case <-timeout:
 			log.Printf("timed out: %s\n", proc)
 			if err := proc.Kill(); err != nil {
 				log.Print(err)
 			}
-			// Don't care if this errors.
-			proc.Wait()
+			proc.Wait() // Don't care if this errors.
 			os.Exit(3)
 		}
 	}
