@@ -77,16 +77,12 @@ var myargs struct {
 	localname  string
 }
 
-func usage() {
-	cmd.BadArgs("usage: %s command [argument ...]\n", myargs.myname)
-}
-
 func init() {
 	log.SetFlags(0)
 	myargs.myname = filepath.Base(os.Args[0])
 
 	if len(os.Args) < 2 {
-		usage()
+		cmd.Usage(myargs.myname)
 	}
 
 	myargs.command = os.Args[1]

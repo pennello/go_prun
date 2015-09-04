@@ -51,16 +51,12 @@ var myargs struct {
 	args []string
 }
 
-func usage() {
-	cmd.BadArgs("usage: %s timelimit command [argument ...]\n", myargs.myname)
-}
-
 func init() {
 	log.SetFlags(0)
 	myargs.myname = filepath.Base(os.Args[0])
 
 	if len(os.Args) < 3 {
-		usage()
+		cmd.Usage(myargs.myname, "timelimit")
 	}
 
 	var err error
