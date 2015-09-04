@@ -22,6 +22,10 @@
 // to stay within the length limit, but still uniquely and
 // deterministically identify the given command and its arguments.
 //
+// This command-specific lock file is created, used, and removed in a
+// race-free manner by means of a "global" lock file, stored in the same
+// directory, with name "prunex_global".
+//
 // Diagnostics
 //
 // prunex may return with the following exit codes.
