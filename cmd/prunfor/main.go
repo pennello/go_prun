@@ -9,13 +9,18 @@
 //
 // Diagnostics
 //
-// prunfor will return with the following exit codes.
+// prunfor may return with the following exit codes.
 //
 //	  1 An unidentified error occurred when trying to run or wait on
 //	    the command.
 //	  2 Invalid arguments.
 //	  3 Timed out.
 //	127 The command could not be found.
+//
+// And it will print an appropriate message to standard error.
+//
+// In addition, prunfor may return with the following exit code.
+//
 //	255 The command exited unsuccessfully, but the underlying
 //	    operating system does not support examining the exit status.
 //
