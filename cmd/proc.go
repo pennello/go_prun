@@ -31,9 +31,9 @@ type Proc struct {
 // NewProc returns the Proc struct to execute the named command with its
 // optional arguments.
 //
-// If command contains no path separators, Command uses os/exec.LookPath
-// to resolve the path to a complete command if possible. Otherwise it
-// uses command directly.
+// If command contains no path separators, Command uses exec.LookPath to
+// resolve the path to a complete command if possible. Otherwise it uses
+// command directly.
 //
 // It sets the current process's standard in, output, and error to be
 // those used by the new process.

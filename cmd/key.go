@@ -10,9 +10,10 @@ import (
 	"crypto/md5"
 )
 
-// MaxKeyLength is the maximum key length, over which the key will use a
-// hash at its end to stay within the length limit, but still uniquely
-// and deterministically identify the given command and its arguments.
+// MaxKeyLength is the maximum key length used by MakeKey, over which it
+// will use a hash at its end to stay within the length limit, but still
+// uniquely and deterministically identify the given command and its
+// arguments.
 const MaxKeyLength = 128
 
 var nonwordre = regexp.MustCompile(`[^\w]+`)
