@@ -4,6 +4,10 @@
 //
 //	usage: prunex command [argument ...]
 //
+// It is similar to lockf on FreeBSD or flock on Linux.  If the lock
+// cannot be acquired (due to another instance holding it), then prunex
+// exits immediately.
+//
 // Lock Files
 //
 // prunex runs the given command exclusively by means of lock files.
@@ -24,7 +28,8 @@
 //
 // This command-specific lock file is created, used, and removed in a
 // race-free manner by means of a "global" lock file, stored in the same
-// directory, with name "prunex_global".
+// directory, with name "prunex_global".  This file is not removed
+// automatically.
 //
 // Diagnostics
 //
