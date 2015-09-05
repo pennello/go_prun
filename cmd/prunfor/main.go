@@ -32,48 +32,32 @@ import (
 	"os"
 	"time"
 
-	"path/filepath"
-
 	"chrispennello.com/go/prun/cmd"
 )
 
-var myargs struct {
-	// Name of this program as it's invoked.
-	myname string
+var state struct {
+	cmd cmd.State
 
 	// Time timelimit that the specified program can run for.
 	timelimit time.Duration
-
-	// Name of the command to run.
-	command string
-
-	// Optional arguments to pass to the program.
-	args []string
 }
 
 func init() {
 	log.SetFlags(0)
-	myargs.myname = filepath.Base(os.Args[0])
-
-	if len(os.Args) < 3 {
-		cmd.Usage(myargs.myname, "timelimit")
-	}
+	state.cmd = cmd.Parse("timelimit")
 
 	var err error
-	myargs.timelimit, err = time.ParseDuration(os.Args[1])
+	state.timelimit, err = time.ParseDuration(state.cmd.Me.Args[0])
 	if err != nil {
 		cmd.ArgError(err)
 	}
-	if myargs.timelimit < 0 {
+	if state.timelimit < 0 {
 		cmd.BadArgs("timelimit must be non-negative\n")
 	}
-
-	myargs.command = os.Args[2]
-	myargs.args = os.Args[3:]
 }
 
 func main() {
-	proc := cmd.NewProcExit(myargs.command, myargs.args)
+	proc := cmd.NewProcExit(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
 
 	done := make(chan struct{})
 	go func() {
@@ -81,10 +65,10 @@ func main() {
 		close(done)
 	}()
 
-	if myargs.timelimit > 0 {
+	if state.timelimit > 0 {
 		timeout := make(chan struct{})
 		go func() {
-			time.Sleep(myargs.timelimit)
+			time.Sleep(state.timelimit)
 			close(timeout)
 		}()
 		select {

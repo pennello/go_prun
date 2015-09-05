@@ -62,15 +62,8 @@ import (
 	"chrispennello.com/go/util/lockfile"
 )
 
-var myargs struct {
-	// Name of this program as it's invoked.
-	myname string
-
-	// Name of the command to run.
-	command string
-
-	// Optional arguments to pass to the program.
-	args []string
+var state struct {
+	cmd cmd.State
 
 	// Lock file names.
 	globalname string
@@ -79,27 +72,20 @@ var myargs struct {
 
 func init() {
 	log.SetFlags(0)
-	myargs.myname = filepath.Base(os.Args[0])
-
-	if len(os.Args) < 2 {
-		cmd.Usage(myargs.myname)
-	}
-
-	myargs.command = os.Args[1]
-	myargs.args = os.Args[2:]
+	state.cmd = cmd.Parse()
 
 	tmp := os.TempDir()
-	key := cmd.MakeKey(myargs.command, myargs.args)
-	myargs.globalname = filepath.Join(tmp, fmt.Sprintf("%s_global", myargs.myname))
-	myargs.localname  = filepath.Join(tmp, fmt.Sprintf("%s_local_%s", myargs.myname, key))
+	key := cmd.MakeKey(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
+	state.globalname = filepath.Join(tmp, fmt.Sprintf("%s_global", state.cmd.Me.Name))
+	state.localname  = filepath.Join(tmp, fmt.Sprintf("%s_local_%s", state.cmd.Me.Name, key))
 }
 
 func main() {
-	lc, err := lockfile.LockRm(myargs.globalname, myargs.localname)
+	lc, err := lockfile.LockRm(state.globalname, state.localname)
 	if err != nil {
 		log.Print(err)
 		os.Exit(4)
 	}
 	defer lc.Unlock()
-	cmd.NewProcExit(myargs.command, myargs.args).WaitExit()
+	cmd.NewProcExit(state.cmd.Cmd.Name, state.cmd.Cmd.Args).WaitExit()
 }
