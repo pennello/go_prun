@@ -4,6 +4,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 
@@ -12,15 +13,8 @@ import (
 	"chrispennello.com/go/prun/cmd"
 )
 
-var myargs struct {
-	// Name of this program as it's invoked.
-	myname string
-
-	// Name of the command to run.
-	command string
-
-	// Optional arguments to pass to the program.
-	args []string
+var state struct {
+	cmd cmd.State
 
 	// Log file name.
 	logname string
@@ -28,11 +22,11 @@ var myargs struct {
 
 func init() {
 	log.SetFlags(0)
-	myargs.myname = filepath.Base(os.Args[0])
+	state.cmd = cmd.Parse()
 
-	if len(os.Args) < 2 {
-		cmd.Usage(myargs.myname)
-	}
+	tmp := os.TempDir()
+	key := cmd.MakeKey(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
+	state.logname = filepath.Join(tmp, fmt.Sprintf("%s_%s.log", state.cmd.Me.Name, key))
 }
 
 func main() {
