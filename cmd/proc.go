@@ -94,7 +94,6 @@ func (p *Proc) StartError() *ProcError {
 			Msg:  err.Error(),
 			Code: 1,
 		}
-		log.Fatal(err) // Implicitly exits with status 1.
 	}
 	return nil
 }
