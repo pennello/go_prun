@@ -31,8 +31,8 @@
 //	  1 An unidentified error occurred when trying to run or wait on
 //	    the command.
 //	  2 Invalid arguments.
-//	 40 Minimum period not yet elapsed.
-//	 41 Error opening, creating, examining, or updating the stat
+//	 10 Minimum period not yet elapsed.
+//	 11 Error opening, creating, examining, or updating the stat
 //	    file.
 //	127 The command could not be found.
 //
@@ -92,7 +92,7 @@ func chillopen() *os.File {
 	file, err := os.OpenFile(state.statname, flag, 0666)
 	if err != nil {
 		log.Print(err)
-		os.Exit(41)
+		os.Exit(11)
 	}
 	return file
 }
@@ -106,7 +106,7 @@ func shouldrun() bool {
 	}
 	if !os.IsExist(err) {
 		log.Print(err)
-		os.Exit(41)
+		os.Exit(11)
 	}
 	// os.IsExist(err) == true
 	file = chillopen()
@@ -114,13 +114,13 @@ func shouldrun() bool {
 	fi, err2 := file.Stat()
 	if err2 != nil {
 		log.Print(err2)
-		os.Exit(41)
+		os.Exit(11)
 	}
 	now := time.Now()
 	if now.After(fi.ModTime().Add(state.period)) {
 		if err := os.Chtimes(state.statname, now, now); err != nil {
 			log.Print(err)
-			os.Exit(41)
+			os.Exit(11)
 		}
 		return true
 	}
@@ -129,7 +129,7 @@ func shouldrun() bool {
 
 func main() {
 	if state.period > 0 && !shouldrun() {
-		os.Exit(40)
+		os.Exit(10)
 	}
 	proc := cmd.NewProc(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
 	proc.Cmd.Stdout = os.Stdout
