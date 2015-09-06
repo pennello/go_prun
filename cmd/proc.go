@@ -142,7 +142,7 @@ func (p *Proc) Wait() (exitStatus int, err error) {
 	return -1, nil
 }
 
-// WaitExit wraps Wait.  It consolidates the various errors that can be
+// WaitError wraps Wait.  It consolidates the various errors that can be
 // returned into a single *ProcError.
 func (p *Proc) WaitError() *ProcError {
 	exitStatus, err := p.Wait()
