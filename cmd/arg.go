@@ -24,7 +24,6 @@ type Args struct {
 type State struct {
 	// The prun command-line program.
 	Me Args
-
 	// The command it's meant to invoke.
 	Cmd Args
 }
@@ -49,8 +48,9 @@ func usage(name string, args []string) {
 
 // Parse constructs a State given any additional arguments the utility
 // might take preceding the command.  If the command-line invocation is
-// incorrect, Parse calls displays a standard usage message and exits
-// with exit status 2.
+// incorrect, Parse displays a standard usage message and exits with
+// exit status 2.  The name of the currently-running utility is
+// extracted from the first element of os.Args.
 func Parse(args ...string) State {
 	name := filepath.Base(os.Args[0])
 	if len(os.Args) < 2+len(args) {

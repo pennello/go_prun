@@ -13,12 +13,13 @@ import (
 	"os/exec"
 )
 
-// ErrNoEnt is returned by NewProc when the specified command cannot be
+// ErrNoEnt is returned by Start when the specified command cannot be
 // found.
 var ErrNoEnt = errors.New("not found")
 
 // ProcError represents a non-successful termination of the process.
-// Print Msg to standard error and exit with status code Code.
+// Print Msg, if present, to standard error and exit with status code
+// Code.
 type ProcError struct {
 	Msg  string
 	Code int
@@ -164,7 +165,7 @@ func (p *Proc) WaitError() *ProcError {
 // WaitExit wraps WaitError and, given a *ProcError, exits the parent
 // process with a useful message and exit status when something goes
 // wrong.  If the underlying process exited successfully, it does
-// nothing--that is, it does not exit the parent process).
+// nothing (that is, it does not exit the parent process).
 func (p *Proc) WaitExit() {
 	perr := p.WaitError()
 	if perr != nil {
