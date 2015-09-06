@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 )
 
-// CmdArgs stores the name and arguments of a command-line command.
-type CmdArgs struct {
+// Args stores the name and arguments of a command-line command.
+type Args struct {
 	// The name of the command.
 	Name string
 	// Any of its arguments.
@@ -23,10 +23,10 @@ type CmdArgs struct {
 // command-line implementation.
 type State struct {
 	// The prun command-line program.
-	Me CmdArgs
+	Me Args
 
 	// The command it's meant to invoke.
-	Cmd CmdArgs
+	Cmd Args
 }
 
 // BadArgs logs the message exits the process with exit status 2.
@@ -57,11 +57,11 @@ func Parse(args ...string) State {
 		usage(name, args)
 	}
 	return State{
-		Me: CmdArgs{
+		Me: Args{
 			Name: name,
 			Args: os.Args[1 : 1+len(args)],
 		},
-		Cmd: CmdArgs{
+		Cmd: Args{
 			Name: os.Args[1+len(args)],
 			Args: os.Args[1+len(args)+1:],
 		},
