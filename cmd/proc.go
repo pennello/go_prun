@@ -11,7 +11,6 @@ import (
 	"syscall"
 
 	"os/exec"
-	"path/filepath"
 )
 
 // ErrNoEnt is returned by NewProc when the specified command cannot be
@@ -34,102 +33,80 @@ func (pe *ProcError) Exit() {
 	os.Exit(pe.Code)
 }
 
-// Proc is a wrapper around an os.Process that provides some of the
-// high-level conveniences of an exec.Cmd, but with some more of the
-// low-level utility of an os.Process.
+// Proc is a wrapper around an exec.Cmd that provides common logic for
+// prun command-line implementations.
 type Proc struct {
-	*os.Process
+	*exec.Cmd
 
 	command string
 	args    []string
 }
 
+// filterErrNoEnt replaces the given error with ErrNoEnt if appropriate
+// and returns the original error otherwise.
+func filterErrNoEnt(err error) error {
+	execErr, ok := err.(*exec.Error)
+	if ok {
+		if execErr.Err == exec.ErrNotFound {
+			return ErrNoEnt
+		}
+	}
+	if os.IsNotExist(err) {
+		return ErrNoEnt
+	}
+	return err
+}
+
 // NewProc returns the Proc struct to execute the named command with its
 // optional arguments.
 //
-// If command contains no path separators, Command uses exec.LookPath to
-// resolve the path to a complete command if possible. Otherwise it uses
-// command directly.
-//
-// It sets the current process's standard in, output, and error to be
-// those used by the new process.
-//
-// If the specified command cannot be found, ErrNoEnt is returned.  If
-// there is any other error trying to find or start the given command,
-// that error is returned.
-func NewProc(command string, args []string) (*Proc, error) {
-	filterError := func(err error) error {
-		execErr, ok := err.(*exec.Error)
-		if ok {
-			if execErr.Err == exec.ErrNotFound {
-				return ErrNoEnt
-			}
-		}
-		if os.IsNotExist(err) {
-			return ErrNoEnt
-		}
-		return err
-	}
-
-	origCommand := command
-	if filepath.Base(origCommand) == origCommand {
-		if lp, err := exec.LookPath(origCommand); err != nil {
-			return nil, filterError(err)
-		} else {
-			command = lp
-		}
-	}
-	argv := append([]string{origCommand}, args...)
-	attr := new(os.ProcAttr)
-	attr.Files = []*os.File{
-		os.Stdin,
-		os.Stdout,
-		os.Stderr,
-	}
-	process, err := os.StartProcess(command, argv, attr)
-	if err != nil {
-		return nil, filterError(err)
-	}
-	p := &Proc{
-		Process: process,
-		command: origCommand,
+// Remember to set the Cmd Stdout and Stderr or capture with the
+// corresponding pipes.  Otherwise, all output will be discarded.
+func NewProc(command string, args []string) *Proc {
+	return &Proc{
+		Cmd: exec.Command(command, args...),
+		command: command,
 		args: args,
 	}
-	return p, nil
 }
 
-// NewProcExit wraps NewProc.  It consolidates the various errors that
-// can be returned into a single *ProcError.
+// Start wraps the underlying exec.Cmd Start, filtering any returned
+// errors and transforming them into an ErrNoEnt if appropriate.
+func (p *Proc) Start() error {
+	return filterErrNoEnt(p.Cmd.Start())
+}
+
+// StartError wraps Start.  It consolidates the various errors that can
+// be returned into a single *ProcError.
 //
 // If the command could not be found, the exit status is 127.  For all
 // other errors, the exit status is 1.
-func NewProcError(command string, args []string) (*Proc, *ProcError) {
-	proc, err := NewProc(command, args)
+func (p *Proc) StartError() *ProcError {
+	err := p.Start()
 	if err != nil {
 		if err == ErrNoEnt {
-			return nil, &ProcError{
-				Msg:  fmt.Sprintf("%s: not found\n", command),
+			return &ProcError{
+				Msg:  fmt.Sprintf("%s: not found\n", p.command),
 				Code: 127,
 			}
 		}
-		return nil, &ProcError{
+		return &ProcError{
 			Msg:  err.Error(),
 			Code: 1,
 		}
 		log.Fatal(err) // Implicitly exits with status 1.
 	}
-	return proc, nil
+	return nil
 }
 
-// NewProcExit wraps NewProcErr, but instead of returning an error when
+// StartExit wraps StartError, but instead of returning an error when
 // something goes wrong, it exits the parent process with the specified
 // useful error message and exit status.
-func NewProcExit(command string, args []string) *Proc {
-	proc, perr := NewProcError(command, args)
+func (p *Proc) StartExit() {
+	perr := p.StartError()
 	if perr != nil {
 		perr.Exit()
 	}
-	return proc
 }
 
 // String returns a string representation of the command and its
@@ -141,8 +118,8 @@ func (p *Proc) String() string {
 	return fmt.Sprintf("%s %s", p.command, strings.Join(p.args, " "))
 }
 
-// Wait calls Wait on the underlying os.Process and, if the operating
-// system supports it, returns the exit status.
+// Wait calls Wait on the underlying exec.Cmd's Process and, if the
+// operating system supports it, returns the exit status.
 //
 // If an error occurs when waiting for the underlying process, the exit
 // status will be -2, and the error will be returned.  If the operating
@@ -152,7 +129,7 @@ func (p *Proc) String() string {
 // exited unsuccessfully, the exit status will be -1.
 func (p *Proc) Wait() (exitStatus int, err error) {
 	var ps *os.ProcessState
-	ps, err = p.Process.Wait()
+	ps, err = p.Cmd.Process.Wait()
 	if err != nil {
 		return -2, err
 	}
@@ -187,16 +164,11 @@ func (p *Proc) WaitError() *ProcError {
 
 // WaitExit wraps WaitError and, given a *ProcError, exits the parent
 // process with a useful message and exit status when something goes
-// wrong.  If the underlying os.Process exited successfully, it does
+// wrong.  If the underlying process exited successfully, it does
 // nothing--that is, it does not exit the parent process).
 func (p *Proc) WaitExit() {
 	perr := p.WaitError()
 	if perr != nil {
 		perr.Exit()
 	}
-}
-
-// Kill simply calls Kill on the underlying os.Process.
-func (p *Proc) Kill() error {
-	return p.Process.Kill()
 }

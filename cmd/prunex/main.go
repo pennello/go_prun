@@ -87,5 +87,9 @@ func main() {
 		os.Exit(4)
 	}
 	defer lc.Unlock()
-	cmd.NewProcExit(state.cmd.Cmd.Name, state.cmd.Cmd.Args).WaitExit()
+	proc := cmd.NewProc(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
+	proc.Cmd.Stdout = os.Stdout
+	proc.Cmd.Stderr = os.Stderr
+	proc.StartExit()
+	proc.WaitExit()
 }

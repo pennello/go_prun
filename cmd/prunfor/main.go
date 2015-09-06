@@ -57,7 +57,10 @@ func init() {
 }
 
 func main() {
-	proc := cmd.NewProcExit(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
+	proc := cmd.NewProc(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
+	proc.Cmd.Stdout = os.Stdout
+	proc.Cmd.Stderr = os.Stderr
+	proc.StartExit()
 
 	done := make(chan struct{})
 	go func() {
@@ -79,7 +82,7 @@ func main() {
 			break
 		case <-timeout:
 			log.Printf("timed out: %s\n", proc)
-			if err := proc.Kill(); err != nil {
+			if err := proc.Cmd.Process.Kill(); err != nil {
 				log.Print(err)
 			}
 			proc.Wait() // Don't care if this errors.
