@@ -140,7 +140,7 @@ func write(lf *logFile, rbuf *ringbuffer.B, tostderr bool) {
 }
 
 func exit(lf *logFile, perr *cmd.ProcError, rbuf *ringbuffer.B) {
-	lf.failures += 1
+	lf.failures++
 	if perr.Msg != "" {
 		rbuf.Write([]byte(perr.Msg + "\n"))
 	}
