@@ -64,9 +64,9 @@ func filterErrNoEnt(err error) error {
 // corresponding pipes.  Otherwise, all output will be discarded.
 func NewProc(command string, args []string) *Proc {
 	return &Proc{
-		Cmd: exec.Command(command, args...),
+		Cmd:     exec.Command(command, args...),
 		command: command,
-		args: args,
+		args:    args,
 	}
 }
 
@@ -155,7 +155,7 @@ func (p *Proc) WaitError() *ProcError {
 	}
 	if exitStatus != 0 {
 		return &ProcError{
-			Msg: "",
+			Msg:  "",
 			Code: exitStatus,
 		}
 	}

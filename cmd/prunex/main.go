@@ -77,7 +77,7 @@ func init() {
 	tmp := os.TempDir()
 	key := cmd.MakeKey(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
 	state.globalname = filepath.Join(tmp, fmt.Sprintf("%s_global", state.cmd.Me.Name))
-	state.localname  = filepath.Join(tmp, fmt.Sprintf("%s_local_%s", state.cmd.Me.Name, key))
+	state.localname = filepath.Join(tmp, fmt.Sprintf("%s_local_%s", state.cmd.Me.Name, key))
 }
 
 func main() {

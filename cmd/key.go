@@ -46,7 +46,7 @@ func MakeKey(command string, args []string) string {
 	key = strings.Trim(key, "_")
 	if len(key) > MaxKeyLength {
 		hash := fmt.Sprintf("%x", md5.Sum([]byte(key)))
-		key = fmt.Sprintf("%s%s", key[:MaxKeyLength - len(hash)], hash)
+		key = fmt.Sprintf("%s%s", key[:MaxKeyLength-len(hash)], hash)
 	}
 	return key
 }

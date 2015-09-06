@@ -34,14 +34,14 @@ func TestMakeKey(t *testing.T) {
 
 	var longcommand string
 
-	longcommand = strings.Repeat("a", maxkeylen - 2)
+	longcommand = strings.Repeat("a", maxkeylen-2)
 	testMakeKeyExpect(t, longcommand, []string{}, longcommand)
-	testMakeKeyExpect(t, longcommand, []string{"x"}, longcommand + "_x")
-	longcommand = strings.Repeat("b", maxkeylen - 1)
+	testMakeKeyExpect(t, longcommand, []string{"x"}, longcommand+"_x")
+	longcommand = strings.Repeat("b", maxkeylen-1)
 	testMakeKeyExpect(t, longcommand, []string{}, longcommand)
 	longcommand = strings.Repeat("c", maxkeylen)
 	testMakeKeyExpect(t, longcommand, []string{}, longcommand)
 
-	testMakeKeyLong(t, strings.Repeat("d", maxkeylen + 1), []string{})
-	testMakeKeyLong(t, strings.Repeat("e", 2 * maxkeylen), []string{})
+	testMakeKeyLong(t, strings.Repeat("d", maxkeylen+1), []string{})
+	testMakeKeyLong(t, strings.Repeat("e", 2*maxkeylen), []string{})
 }

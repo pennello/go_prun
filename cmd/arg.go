@@ -53,17 +53,17 @@ func usage(name string, args []string) {
 // with exit status 2.
 func Parse(args ...string) State {
 	name := filepath.Base(os.Args[0])
-	if len(os.Args) < 2 + len(args) {
+	if len(os.Args) < 2+len(args) {
 		usage(name, args)
 	}
 	return State{
 		Me: CmdArgs{
 			Name: name,
-			Args: os.Args[1:1 + len(args)],
+			Args: os.Args[1 : 1+len(args)],
 		},
 		Cmd: CmdArgs{
-			Name: os.Args[1 + len(args)],
-			Args: os.Args[1 + len(args) + 1:],
+			Name: os.Args[1+len(args)],
+			Args: os.Args[1+len(args)+1:],
 		},
 	}
 }

@@ -59,11 +59,11 @@ func (lf *logFile) parse() error {
 		return errBadLog
 	}
 
-	x := lf.data[i + len(footerprefix):]
+	x := lf.data[i+len(footerprefix):]
 	if !strings.HasSuffix(x, "\n") {
 		return errBadLog
 	}
-	x = x[:len(x) - 1] // Strip off trailing newline.
+	x = x[:len(x)-1] // Strip off trailing newline.
 
 	failures64, err := strconv.ParseInt(x, 0, 0)
 	if err != nil {
@@ -82,7 +82,7 @@ func (lf *logFile) write(data []byte) error {
 	defer file.Close()
 	newdata := lf.data + string(data)
 	if len(newdata) > maxLogSize {
-		newdata = newdata[len(newdata) - maxLogSize:]
+		newdata = newdata[len(newdata)-maxLogSize:]
 	}
 	newdata += fmt.Sprintf("%s fail %d\n", time.Now(), lf.failures)
 	_, err2 := io.WriteString(file, newdata)
