@@ -18,6 +18,22 @@ import (
 // found.
 var ErrNoEnt = errors.New("not found")
 
+// ProcError represents a non-successful termination of the process.
+// Print Msg to standard error and exit with status code Code.
+type ProcError struct {
+	Msg  string
+	Code int
+}
+
+// Exit prints the message, if one is present, to standard error, and
+// exits the parent process with the exit code.
+func (pe *ProcError) Exit() {
+	if pe.Msg != "" {
+		log.Print(pe.Msg)
+	}
+	os.Exit(pe.Code)
+}
+
 // Proc is a wrapper around an os.Process that provides some of the
 // high-level conveniences of an exec.Cmd, but with some more of the
 // low-level utility of an os.Process.
@@ -82,20 +98,36 @@ func NewProc(command string, args []string) (*Proc, error) {
 	return p, nil
 }
 
-// NewProcExit wraps NewProc, but instead of returning an error when
-// something goes wrong, it exits the parent process with a useful error
-// message and exit status.
+// NewProcExit wraps NewProc.  It consolidates the various errors that
+// can be returned into a single *ProcError.
 //
 // If the command could not be found, the exit status is 127.  For all
 // other errors, the exit status is 1.
-func NewProcExit(command string, args []string) *Proc {
+func NewProcError(command string, args []string) (*Proc, *ProcError) {
 	proc, err := NewProc(command, args)
 	if err != nil {
 		if err == ErrNoEnt {
-			log.Printf("%s: not found\n", command)
-			os.Exit(127)
+			return nil, &ProcError{
+				Msg:  fmt.Sprintf("%s: not found\n", command),
+				Code: 127,
+			}
+		}
+		return nil, &ProcError{
+			Msg:  err.Error(),
+			Code: 1,
 		}
 		log.Fatal(err) // Implicitly exits with status 1.
+	}
+	return proc, nil
+}
+
+// NewProcExit wraps NewProcErr, but instead of returning an error when
+// something goes wrong, it exits the parent process with the specified
+// useful error message and exit status.
+func NewProcExit(command string, args []string) *Proc {
+	proc, perr := NewProcError(command, args)
+	if perr != nil {
+		perr.Exit()
 	}
 	return proc
 }
@@ -134,18 +166,33 @@ func (p *Proc) Wait() (exitStatus int, err error) {
 	return -1, nil
 }
 
-// WaitExit wraps Wait, but instead of returning the exit status or
-// error, it exits the parent process with a useful message and exit
-// status when something goes wrong.  If the underlying os.Process
-// exited successfully, it does nothing--that is, it does not exit the
-// parent process).
-func (p *Proc) WaitExit() {
+// WaitExit wraps Wait.  It consolidates the various errors that can be
+// returned into a single *ProcError.
+func (p *Proc) WaitError() *ProcError {
 	exitStatus, err := p.Wait()
 	if err != nil {
-		log.Fatal(err)
+		return &ProcError{
+			Msg:  err.Error(),
+			Code: 1,
+		}
 	}
 	if exitStatus != 0 {
-		os.Exit(exitStatus)
+		return &ProcError{
+			Msg: "",
+			Code: exitStatus,
+		}
+	}
+	return nil
+}
+
+// WaitExit wraps WaitError and, given a *ProcError, exits the parent
+// process with a useful message and exit status when something goes
+// wrong.  If the underlying os.Process exited successfully, it does
+// nothing--that is, it does not exit the parent process).
+func (p *Proc) WaitExit() {
+	perr := p.WaitError()
+	if perr != nil {
+		perr.Exit()
 	}
 }
 
