@@ -52,7 +52,7 @@ func init() {
 		cmd.ArgError(err)
 	}
 	if state.timelimit < 0 {
-		cmd.BadArgs("timelimit must be non-negative\n")
+		cmd.BadArgs("timelimit must be non-negative")
 	}
 }
 
