@@ -14,7 +14,7 @@
 //	  1 An unidentified error occurred when trying to run or wait on
 //	    the command.
 //	  2 Invalid arguments.
-//	  3 Timed out.
+//	 10 Timed out.
 //	127 The command could not be found.
 //
 // And it will print an appropriate message to standard error.
@@ -86,7 +86,7 @@ func main() {
 				log.Print(err)
 			}
 			proc.Wait() // Don't care if this errors.
-			os.Exit(3)
+			os.Exit(10)
 		}
 	}
 

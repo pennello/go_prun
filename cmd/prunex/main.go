@@ -38,7 +38,7 @@
 //	  1 An unidentified error occurred when trying to run or wait on
 //	    the command.
 //	  2 Invalid arguments.
-//	  4 Could not acquire lock.
+//	 20 Could not acquire lock.
 //	127 The command could not be found.
 //
 // And it will print an appropriate message to standard error.
@@ -84,7 +84,7 @@ func main() {
 	lc, err := lockfile.LockRm(state.globalname, state.localname)
 	if err != nil {
 		log.Print(err)
-		os.Exit(4)
+		os.Exit(20)
 	}
 	defer lc.Unlock()
 	proc := cmd.NewProc(state.cmd.Cmd.Name, state.cmd.Cmd.Args)
