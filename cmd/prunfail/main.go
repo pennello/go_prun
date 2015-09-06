@@ -43,7 +43,7 @@
 //
 // Diagnostics
 //
-// prunex may return with the following exit codes.
+// prunfail may return with the following exit codes.
 //
 //	  1 An unidentified error occurred when trying to run or wait on
 //	    the command.
@@ -56,13 +56,13 @@
 // And it will print an appropriate message to standard error, even if
 // the command has not exited unsuccessfully more than maxfail times.
 //
-// In addition, prunex may return with the following exit code.
+// In addition, prunfail may return with the following exit code.
 //
 //	255 The command exited unsuccessfully, but the underlying
 //	    operating system does not support examining the exit status.
 //
-// Otherwise, prunex will return with the exit code of the command.  If
-// unsuccessful, the output will be printed only if the command has
+// Otherwise, prunfail will return with the exit code of the command.
+// If unsuccessful, the output will be printed only if the command has
 // exited unsuccessfully more than maxfail times.
 package main
 
