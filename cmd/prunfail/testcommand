@@ -1,0 +1,14 @@
+#!/usr/bin/env python
+
+import random
+import sys
+
+def main():
+  if random.random() > .25:
+    print 'oh man, some bad stuff happened'
+    sys.exit(17)
+
+  print 'ok'
+  sys.exit(0)
+
+main()
