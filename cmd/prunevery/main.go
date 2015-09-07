@@ -7,6 +7,22 @@
 // period is a non-negative time.Duration.  If period is zero, no
 // minimum period will be enforced.
 //
+// Sample Usage
+//
+// Suppose that you have a synchronization script that you wish to run
+// periodically on a laptop.  Since it's a laptop, most of its time will
+// be spent sleeping.  But when you use it, let's say you're pretty sure
+// you'll use it for at least 20 minutes.  You might implement a
+// reliable running of this synchronization script by using cron and
+// prunevery.
+//
+//	*/15 * * * * prunevrey 8h sh sync.sh
+//
+// Every 15 minutes, cron will try to run sync.sh.  But prunevery will
+// make sure that it doesn't run more than once every 8 hours.  So you
+// can be reasonably sure that it'll run on this schedule, even though
+// the laptop is most often sleeping.
+//
 // Stat File
 //
 // prunevery enforces the minimum period execution interval by means of
