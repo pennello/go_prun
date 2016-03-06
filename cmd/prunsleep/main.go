@@ -5,7 +5,7 @@
 //	usage: prunsleep bound command [argument ...]
 //
 // bound is a non-negative time.Duration.  If bound is zero, the command
-// will be executed immediately.  Generally, It represents a limit on
+// will be executed immediately.  Generally, it represents a limit on
 // how long prunsleep will wait before executing the specified command.
 // Precisely, prunsleep will sleep for a pseudo-random number of
 // nanoseconds in [0,bound).
@@ -17,7 +17,7 @@
 // didn't all fire at the same time--otherwise you have a "thundering
 // herd".  Thus, you might wrap your cron job with prunsleep.
 //
-//	@daily prunsleep sh pull.sh
+//	@daily prunsleep 1h sh pull.sh
 //
 // As a point of comparison, sleeping for a random amount of time when
 // run as a cron job is a feature in FreeBSD's portsnap cron command.
