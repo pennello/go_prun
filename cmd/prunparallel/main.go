@@ -75,16 +75,20 @@ func init() {
 	state.indextemplate = state.cmd.Me.Args[2]
 }
 
-func worker(work chan uint64, returncodes chan int) {
+func worker(work chan uint64, returncodes chan int, done chan struct{}) {
 	for index := range work {
 		log.Println("index", index)
+		// TODO Inject index into arguments, if requested, run
+		// command.
 		returncodes <- 0
 	}
+	done <- struct{}{}
 }
 
 func main() {
-	work := make(chan uint64, state.concur)
+	work := make(chan uint64, state.total)
 	returncodes := make(chan int)
+	done := make(chan struct{})
 
 	// Determine how many workers we'll need and start 'em all up.
 	var workers uint64
@@ -94,17 +98,29 @@ func main() {
 		workers = state.concur
 	}
 	for i := uint64(0); i < workers; i++ {
-		go worker(work, returncodes)
+		go worker(work, returncodes, done)
 	}
 
-	go func() {
-		for i := uint64(0); i < state.total; i++ {
-			work <- i
-		}
-		close(work)
-	}()
+	// Feed in work indices.
+	for i := uint64(0); i < state.total; i++ {
+		work <- i
+	}
+	close(work)
 
-	for r := range returncodes {
-		log.Println("return", r)
+	workersdone := uint64(0)
+
+	loop:
+	for {
+		select {
+		case r := <- returncodes:
+			log.Println("return", r)
+		case <-done:
+			workersdone += 1
+			if workersdone == workers {
+				close(returncodes)
+				close(done)
+				break loop
+			}
+		}
 	}
 }
