@@ -11,6 +11,8 @@ Documentation
    Guard the output of a potentially or intermittently failing command.
  - [prunfor](https://godoc.org/chrispennello.com/go/prun/cmd/prunfor):
    Run a command for an optionally limited amount of time.
+ - [prunparallel](https://godoc.org/chrispennello.com/go/prun/cmd/prunparallel):
+   Run commands in parallel.
  - [prunsleep](https://godoc.org/chrispennello.com/go/prun/cmd/prunsleep):
    Run a command after sleeping a random amount of time.
 
@@ -22,6 +24,7 @@ Individually:
     go get chrispennello.com/go/prun/cmd/prunex
     go get chrispennello.com/go/prun/cmd/prunfail
     go get chrispennello.com/go/prun/cmd/prunfor
+    go get chrispennello.com/go/prun/cmd/prunparallel
     go get chrispennello.com/go/prun/cmd/prunsleep
 
 Everything:
