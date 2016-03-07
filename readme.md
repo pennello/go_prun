@@ -16,11 +16,17 @@ Documentation
 
 Installation
 ------------
+Individually:
+
     go get chrispennello.com/go/prun/cmd/prunevery
     go get chrispennello.com/go/prun/cmd/prunex
     go get chrispennello.com/go/prun/cmd/prunfail
     go get chrispennello.com/go/prun/cmd/prunfor
     go get chrispennello.com/go/prun/cmd/prunsleep
+
+Everything:
+
+    go get chrispennello.com/go/prun/cmd/...
 
 Future Work
 -----------
