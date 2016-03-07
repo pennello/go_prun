@@ -113,7 +113,6 @@ func NewInjectedProc(command string, args []string, indextemplate string, index 
 }
 
 func worker(work chan *cmd.Proc, returncodes chan int, done chan struct{}) {
-	log.Print("worker starting")
 	workloop:
 	for proc := range work {
 		fns := []func() *cmd.ProcError{proc.StartError, proc.WaitError}
@@ -126,25 +125,30 @@ func worker(work chan *cmd.Proc, returncodes chan int, done chan struct{}) {
 		}
 	}
 	done <- struct{}{}
-	log.Print("worker exiting")
 }
 
 func main() {
-	// XXX Special-case when state.total == 0?  Why doesn't the
-	// existing machinery just work and exit without doing anything?
+	// Special-case trivial state.total since we won't launch any
+	// workers.
+	if state.total == 0 {
+		os.Exit(0)
+	}
 
 	work := make(chan *cmd.Proc)
 	returncodes := make(chan int)
 	done := make(chan struct{})
 
 	// Determine how many workers we'll need and start 'em all up.
+	// Note that state.total needs to be at least 1 here.
+	// Otherwise, there will be no workers to signal that the work
+	// is done!  See the special case at the beginning of this
+	// function.
 	var workers uint64
 	if state.concur > state.total {
 		workers = state.total
 	} else {
 		workers = state.concur
 	}
-	log.Print("starting workers")
 	for i := uint64(0); i < workers; i++ {
 		go worker(work, returncodes, done)
 	}
@@ -177,7 +181,6 @@ func main() {
 			work <- proc
 		}
 		close(work)
-		log.Print("closed work channel")
 	}()
 
 	workersdone := uint64(0)
@@ -187,7 +190,6 @@ func main() {
 
 	mainloop:
 	for {
-		log.Print("mainloop")
 		select {
 		case r := <- returncodes:
 			if returncode == 0 && r != 0 {
