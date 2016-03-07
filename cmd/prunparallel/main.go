@@ -12,10 +12,12 @@
 // executed.  If indextemplate is the empty string, no substitution will
 // occur.
 //
+// This is a comparatively complex prun command.
+//
 // As soon as there is a non-successful termination of one of the
 // commands, prunparallel will cease launching any new commands, wait
 // for the currently-running commands to terminate, and return the exit
-// code of the first non-successful termination.
+// code of that first non-successful termination.
 //
 // Sample Usage
 //
@@ -41,8 +43,12 @@ package main
 
 import (
 	"log"
-	//"os"
+	"os"
 	"strconv"
+	"sync"
+
+	"time"
+	"math/rand"
 
 	"chrispennello.com/go/prun/cmd"
 )
@@ -80,13 +86,20 @@ func worker(work chan uint64, returncodes chan int, done chan struct{}) {
 		log.Println("index", index)
 		// TODO Inject index into arguments, if requested, run
 		// command.
-		returncodes <- 0
+		time.Sleep(time.Duration(rand.Int63n(int64(1 * time.Second))))
+		if rand.Intn(10) == 0 {
+			returncodes <- int(5 + rand.Intn(10))
+		} else {
+			returncodes <- 0
+		}
 	}
 	done <- struct{}{}
 }
 
 func main() {
-	work := make(chan uint64, state.total)
+	rand.Seed(time.Now().UTC().UnixNano())
+
+	work := make(chan uint64)
 	returncodes := make(chan int)
 	done := make(chan struct{})
 
@@ -101,19 +114,47 @@ func main() {
 		go worker(work, returncodes, done)
 	}
 
-	// Feed in work indices.
-	for i := uint64(0); i < state.total; i++ {
-		work <- i
+	// Machinery to signal work scheduler to abort scheduling more
+	// work if we get a failure.
+	abort := false
+	mu := &sync.Mutex{}
+	aborting := func() bool {
+		mu.Lock()
+		defer mu.Unlock()
+		return abort
 	}
-	close(work)
+	setAbort := func() {
+		mu.Lock()
+		defer mu.Unlock()
+		abort = true
+	}
+
+	// Simple work scheduler: feed in work indices, unless there's
+	// an abort.
+	go func() {
+		for i := uint64(0); i < state.total; i++ {
+			if aborting() {
+				break
+			}
+			work <- i
+		}
+		close(work)
+	}()
 
 	workersdone := uint64(0)
+	// The whole program will exit with the first non-zero
+	// return code, if there is one.
+	returncode := 0
 
 	loop:
 	for {
 		select {
 		case r := <- returncodes:
 			log.Println("return", r)
+			if returncode == 0 && r != 0 {
+				returncode = r
+				setAbort()
+			}
 		case <-done:
 			workersdone += 1
 			if workersdone == workers {
@@ -123,4 +164,6 @@ func main() {
 			}
 		}
 	}
+
+	os.Exit(returncode)
 }
