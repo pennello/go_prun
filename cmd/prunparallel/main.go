@@ -1,6 +1,7 @@
 // chris 2016-03-06
 
-// TODO
+// TODO Extend index template injection to the command itself?
+
 // prunparallel runs commands in parallel.
 //
 //	usage: prunparallel total concur indextemplate command [argument ...]
@@ -21,7 +22,19 @@
 //
 // Sample Usage
 //
-// TODO
+// Here is a trivial example.
+//
+//	$ prunparallel 6 4 {} echo {}
+//	3
+//	1
+//	2
+//	0
+//	4
+//	5
+//
+// prunparallel will execute 6 runs in total, with 4 concurrent.  The
+// indextemplate is the string "{}", and all it will do is echo the
+// command index.
 //
 // Diagnostics
 //
@@ -42,13 +55,12 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"sync"
-
-	"time"
-	"math/rand"
 
 	"chrispennello.com/go/prun/cmd"
 )
@@ -81,25 +93,47 @@ func init() {
 	state.indextemplate = state.cmd.Me.Args[2]
 }
 
-func worker(work chan uint64, returncodes chan int, done chan struct{}) {
-	for index := range work {
-		log.Println("index", index)
-		// TODO Inject index into arguments, if requested, run
-		// command.
-		time.Sleep(time.Duration(rand.Int63n(int64(1 * time.Second))))
-		if rand.Intn(10) == 0 {
-			returncodes <- int(5 + rand.Intn(10))
-		} else {
-			returncodes <- 0
+// Move NewInjectedProc into cmd package?
+
+// NewInjectedProc returns a new cmd.Proc.  It first, however, runs
+// through args, replacing occurrences of indextemplate with the decimal
+// string representation of the given index.  If indextemplate is the
+// empty string, no replacement occurs.
+func NewInjectedProc(command string, args []string, indextemplate string, index uint64) *cmd.Proc {
+	if len(indextemplate) != 0 {
+		args2 := make([]string, len(args))
+		copy(args2, args)
+		args = args2
+		new := fmt.Sprintf("%d", index)
+		for i, arg := range args {
+			args[i] = strings.Replace(arg, indextemplate, new, -1)
+		}
+	}
+	return cmd.NewProc(command, args)
+}
+
+func worker(work chan *cmd.Proc, returncodes chan int, done chan struct{}) {
+	log.Print("worker starting")
+	workloop:
+	for proc := range work {
+		fns := []func() *cmd.ProcError{proc.StartError, proc.WaitError}
+		for _, fn := range fns {
+			if pe := fn(); pe != nil {
+				pe.Print()
+				returncodes <- pe.Code
+				continue workloop
+			}
 		}
 	}
 	done <- struct{}{}
+	log.Print("worker exiting")
 }
 
 func main() {
-	rand.Seed(time.Now().UTC().UnixNano())
+	// XXX Special-case when state.total == 0?  Why doesn't the
+	// existing machinery just work and exit without doing anything?
 
-	work := make(chan uint64)
+	work := make(chan *cmd.Proc)
 	returncodes := make(chan int)
 	done := make(chan struct{})
 
@@ -110,12 +144,13 @@ func main() {
 	} else {
 		workers = state.concur
 	}
+	log.Print("starting workers")
 	for i := uint64(0); i < workers; i++ {
 		go worker(work, returncodes, done)
 	}
 
 	// Machinery to signal work scheduler to abort scheduling more
-	// work if we get a failure.
+	// work if we get a failure (immediately below).
 	abort := false
 	mu := &sync.Mutex{}
 	aborting := func() bool {
@@ -129,16 +164,20 @@ func main() {
 		abort = true
 	}
 
-	// Simple work scheduler: feed in work indices, unless there's
-	// an abort.
+	// Simple work scheduler: create cmd.Proc objects based off of
+	// indices and feed them into the workers.  Bug out on abort.
 	go func() {
 		for i := uint64(0); i < state.total; i++ {
 			if aborting() {
 				break
 			}
-			work <- i
+			proc := NewInjectedProc(state.cmd.Cmd.Name, state.cmd.Cmd.Args, state.indextemplate, i)
+			proc.Cmd.Stdout = os.Stdout
+			proc.Cmd.Stderr = os.Stderr
+			work <- proc
 		}
 		close(work)
+		log.Print("closed work channel")
 	}()
 
 	workersdone := uint64(0)
@@ -146,11 +185,11 @@ func main() {
 	// return code, if there is one.
 	returncode := 0
 
-	loop:
+	mainloop:
 	for {
+		log.Print("mainloop")
 		select {
 		case r := <- returncodes:
-			log.Println("return", r)
 			if returncode == 0 && r != 0 {
 				returncode = r
 				setAbort()
@@ -158,9 +197,12 @@ func main() {
 		case <-done:
 			workersdone += 1
 			if workersdone == workers {
+				// Just in case something goes wrong and
+				// someone tries to write to either of
+				// these, we'll panic.
 				close(returncodes)
 				close(done)
-				break loop
+				break mainloop
 			}
 		}
 	}

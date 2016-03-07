@@ -25,12 +25,17 @@ type ProcError struct {
 	Code int
 }
 
-// Exit prints the message, if one is present, to standard error, and
-// exits the parent process with the exit code.
-func (pe *ProcError) Exit() {
+// Print prints the message, if one is present, to standard error.
+func (pe *ProcError) Print() {
 	if pe.Msg != "" {
 		log.Print(pe.Msg)
 	}
+}
+
+// Exit prints the message, if one is present, to standard error, and
+// exits the parent process with the exit code.
+func (pe *ProcError) Exit() {
+	pe.Print()
 	os.Exit(pe.Code)
 }
 
