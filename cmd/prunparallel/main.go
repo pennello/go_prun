@@ -113,7 +113,7 @@ func NewInjectedProc(command string, args []string, indextemplate string, index 
 }
 
 func worker(work chan *cmd.Proc, returncodes chan int, done chan struct{}) {
-	workloop:
+workloop:
 	for proc := range work {
 		fns := []func() *cmd.ProcError{proc.StartError, proc.WaitError}
 		for _, fn := range fns {
@@ -188,16 +188,16 @@ func main() {
 	// return code, if there is one.
 	returncode := 0
 
-	mainloop:
+mainloop:
 	for {
 		select {
-		case r := <- returncodes:
+		case r := <-returncodes:
 			if returncode == 0 && r != 0 {
 				returncode = r
 				setAbort()
 			}
 		case <-done:
-			workersdone += 1
+			workersdone++
 			if workersdone == workers {
 				// Just in case something goes wrong and
 				// someone tries to write to either of
