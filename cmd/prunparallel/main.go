@@ -60,7 +60,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 
 	"chrispennello.com/go/prun/cmd"
 )
@@ -137,6 +136,7 @@ func main() {
 	work := make(chan *cmd.Proc)
 	returncodes := make(chan int)
 	done := make(chan struct{})
+	abort := make(chan struct{})
 
 	// Determine how many workers we'll need and start 'em all up.
 	// Note that state.total needs to be at least 1 here.
@@ -153,27 +153,16 @@ func main() {
 		go worker(work, returncodes, done)
 	}
 
-	// Machinery to signal work scheduler to abort scheduling more
-	// work if we get a failure (immediately below).
-	abort := false
-	mu := &sync.Mutex{}
-	aborting := func() bool {
-		mu.Lock()
-		defer mu.Unlock()
-		return abort
-	}
-	setAbort := func() {
-		mu.Lock()
-		defer mu.Unlock()
-		abort = true
-	}
-
 	// Simple work scheduler: create cmd.Proc objects based off of
 	// indices and feed them into the workers.  Bug out on abort.
 	go func() {
+	schedloop:
 		for i := uint64(0); i < state.total; i++ {
-			if aborting() {
-				break
+			select {
+			case <-abort:
+				break schedloop
+			default:
+				// No abort, proceed as usual.
 			}
 			proc := NewInjectedProc(state.cmd.Cmd.Name, state.cmd.Cmd.Args, state.indextemplate, i)
 			proc.Cmd.Stdout = os.Stdout
@@ -194,7 +183,7 @@ mainloop:
 		case r := <-returncodes:
 			if returncode == 0 && r != 0 {
 				returncode = r
-				setAbort()
+				close(abort)
 			}
 		case <-done:
 			workersdone++
