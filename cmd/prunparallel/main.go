@@ -7,7 +7,7 @@
 //	usage: prunparallel total concur indextemplate command [argument ...]
 //
 // total is the total number of commands to run.  concur is the positive
-// number of maximum concurrent executions.  intdextemplate is a string
+// number of maximum concurrent executions.  indextemplate is a string
 // that, if it appears in any of the given arguments, will be
 // substituted with the 0-based index of the particular command being
 // executed.  If indextemplate is the empty string, no substitution will
